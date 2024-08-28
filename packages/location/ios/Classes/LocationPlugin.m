@@ -18,6 +18,8 @@
 @property(assign, nonatomic) BOOL flutterListening;
 @property(assign, nonatomic) BOOL hasInit;
 @property(assign, nonatomic) BOOL applicationHasLocationBackgroundMode;
+@property(assign, nonatomic) NSTimeInterval updateInterval; // 추가: 인터벌 속성
+@property(strong, nonatomic) NSDate *lastUpdateTime; // 추가: 마지막 업데이트 시간
 @end
 
 @implementation LocationPlugin
@@ -44,6 +46,8 @@
     self.flutterListening = NO;
     self.waitNextLocation = 2;
     self.hasInit = NO;
+    self.updateInterval = 60.0; // 추가: 기본 60초 인터벌
+    self.lastUpdateTime = [NSDate distantPast]; // 추가: 초기값 설정
   }
   return self;
 }
@@ -88,6 +92,11 @@
         distanceFilter = kCLDistanceFilterNone;
       }
       self.clLocationManager.distanceFilter = distanceFilter;
+
+      // 추가: interval 값 받아서 설정
+      double interval = [call.arguments[@"interval"] doubleValue];
+      self.updateInterval = interval / 1000.0; // ms 단위에서 초 단위로 변환
+
       result(@1);
     }
   } else if ([call.method isEqualToString:@"isBackgroundModeEnabled"]) {
@@ -313,6 +322,12 @@
   }
   CLLocation *location = locations.lastObject;
 
+  NSTimeInterval timeSinceLastUpdate = [[NSDate date] timeIntervalSinceDate:self.lastUpdateTime];
+  if (timeSinceLastUpdate < self.updateInterval) {
+      return; // 인터벌이 지나지 않았다면 업데이트를 무시합니다.
+  }
+  self.lastUpdateTime = [NSDate date]; // 마지막 업데이트 시간을 현재로 설정합니다.
+
   NSTimeInterval timeInSeconds = [location.timestamp timeIntervalSince1970];
   BOOL superiorToIos10 =
       [UIDevice currentDevice].systemVersion.floatValue >= 10;
@@ -387,3 +402,4 @@
 }
 
 @end
+
