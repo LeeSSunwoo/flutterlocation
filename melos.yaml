@@ -1,5 +1,5 @@
 name: flutterlocation
-repository: https://github.com/Lyokone/flutterlocation
+repository: https://github.com/LeeSSunwoo/flutterlocation
 packages:
   - packages/**
 
